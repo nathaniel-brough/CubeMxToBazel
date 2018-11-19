@@ -76,7 +76,6 @@ func TestCCLibraryString(t *testing.T) {
 	ccLibrary := ccLibraryRule{rule{Operands: list, comment: comment{Comment: "#Hello test"}}}
 	expected := "#Hello test\ncc_library(name=\"hello_world\",srcs=[\"a\",\"b\",\"c\",],linkstatic=\"True\",)\n"
 	got := ccLibrary.String()
-
 	if expected != got {
 		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
 	}
@@ -88,10 +87,23 @@ func TestCCBinaryString(t *testing.T) {
 	var srclist bStringList = []string{"a", "b", "c"}
 	srcs := attributeBStringList{Operand: attSrcs, Value: srclist}
 	var list attributeList = []attribute{name, srcs, linkOpt}
-	ccLibrary := ccBinaryRule{rule{Operands: list, comment: comment{Comment: "#Hello test"}}}
+	ccBinary := ccBinaryRule{rule{Operands: list, comment: comment{Comment: "#Hello test"}}}
 	expected := "#Hello test\ncc_binary(name=\"hello_world\",srcs=[\"a\",\"b\",\"c\",],linkstatic=\"True\",)\n"
-	got := ccLibrary.String()
+	got := ccBinary.String()
+	if expected != got {
+		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
+	}
+}
 
+func TestCCImportString(t *testing.T) {
+	name := attributeBString{Operand: "name", Value: "hello_world"}
+	linkOpt := attributeBBool{Operand: "linkstatic", Value: true}
+	var srclist bStringList = []string{"a", "b", "c"}
+	srcs := attributeBStringList{Operand: attSrcs, Value: srclist}
+	var list attributeList = []attribute{name, srcs, linkOpt}
+	ccImport := ccImportRule{rule{Operands: list, comment: comment{Comment: "#Hello test"}}}
+	expected := "#Hello test\ncc_import(name=\"hello_world\",srcs=[\"a\",\"b\",\"c\",],linkstatic=\"True\",)\n"
+	got := ccImport.String()
 	if expected != got {
 		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
 	}

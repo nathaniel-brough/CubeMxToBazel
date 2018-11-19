@@ -58,7 +58,7 @@ type comment struct {
 	Comment string
 }
 
-// Bazel Types
+// bBool Bazel Boolean Type
 type bBool bool
 
 func (b bBool) String() string {
@@ -68,14 +68,17 @@ func (b bBool) String() string {
 	return `"False"`
 }
 
+// bString Bazel string type
 type bString string
 
 func (s bString) String() string {
 	return strconv.Quote(string(s))
 }
 
+// bStringList Bazel string list type
 type bStringList []string
 
+// bStringList Stringer implementation
 func (sList bStringList) String() string {
 	output := "["
 	for _, s := range sList {
@@ -85,16 +88,19 @@ func (sList bStringList) String() string {
 	return output
 }
 
+// attribute describes bazel target attributes
 type attribute interface {
 	Attribute() attributeBase
 }
 
+// attributeBase is the most basic raw type that all other types are converted to before being converted to a string
 type attributeBase struct {
 	comment
 	Operand string
 	Value   string
 }
 
+// attributeBase conversion to a string
 func (at attributeBase) String() string {
 	templateName := "operand"
 	t := template.Must(template.New(templateName).Parse(operandTemplate))
@@ -106,22 +112,26 @@ func (at attributeBase) String() string {
 	return output.String()
 }
 
+// attributeBString conversion to a string
 type attributeBString struct {
 	comment
 	Operand string
 	Value   bString
 }
 
+// attributeBString conversion to base type
 func (at attributeBString) Attribute() attributeBase {
 	return attributeBase{Operand: at.Operand, Value: at.Value.String()}
 }
 
+// attributeBStringList Bazel List of strings attribute
 type attributeBStringList struct {
 	comment
 	Operand string
 	Value   bStringList
 }
 
+// attributeBStringList
 func (at attributeBStringList) Attribute() attributeBase {
 	return attributeBase{Operand: at.Operand, Value: at.Value.String(), comment: comment{at.Comment}}
 }
@@ -173,6 +183,21 @@ type ccBinaryRule struct {
 func (r ccBinaryRule) String() string {
 	templateName := "cc_binary"
 	t := template.Must(template.New(templateName).Parse(ccBinaryTemplate))
+	var output bytes.Buffer
+	err := t.Execute(&output, r)
+	if err != nil {
+		log.Println("Executing template:", err)
+	}
+	return output.String()
+}
+
+type ccImportRule struct {
+	rule
+}
+
+func (r ccImportRule) String() string {
+	templateName := "cc_import"
+	t := template.Must(template.New(templateName).Parse(ccImportTemplate))
 	var output bytes.Buffer
 	err := t.Execute(&output, r)
 	if err != nil {
