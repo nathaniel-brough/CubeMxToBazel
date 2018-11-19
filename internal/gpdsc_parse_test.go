@@ -2,7 +2,6 @@ package cubemxtobazelinternal
 
 import (
 	"encoding/xml"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -174,7 +173,6 @@ func TestParsePackageProjectInitComponents(t *testing.T) {
 			Files:       startupFiles,
 		},
 	}
-	fmt.Println(got)
 	if diff := deep.Equal(got.Components(), expectedComponents); diff != nil {
 		t.Error(diff)
 	}
