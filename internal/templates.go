@@ -161,11 +161,11 @@ type rule struct {
 	Operands attributeList
 }
 
-type ccLibraryRule struct {
+type CcLibraryRule struct {
 	rule
 }
 
-func (r ccLibraryRule) String() string {
+func (r CcLibraryRule) String() string {
 	templateName := "cc_library"
 	t := template.Must(template.New(templateName).Parse(ccLibraryTemplate))
 	var output bytes.Buffer

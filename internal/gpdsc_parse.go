@@ -97,6 +97,9 @@ func ProjectInit(gpdsc []byte) Project {
 
 	wg.Wait()
 
+	// Homogenise descriptions for each component
+	project.components.homogeniseDescriptions()
+
 	return project
 }
 
@@ -164,10 +167,31 @@ type MxComponents struct {
 	Components []MxComponent `xml:"components>component"`
 }
 
+func (c MxComponents) homogeniseDescriptions() {
+	// map[group]description
+	GroupDescriptions := make(map[string]string)
+	// Collect common group descriptions
+	for _, component := range c.Components {
+		if len(component.Description) > 0 {
+			GroupDescriptions[component.Group] = component.Description
+		}
+	}
+	// Apply common group descriptions
+	for i, component := range c.Components {
+		for group, description := range GroupDescriptions {
+			if len(component.Description) == 0 && component.Group == group {
+				c.Components[i].Description = description
+			}
+
+		}
+	}
+}
+
 // MxComponent describes one component module
 type MxComponent struct {
 	Class       string   `xml:"Cclass,attr"`
 	Group       string   `xml:"Cgroup,attr"`
+	Subsection  string   `xml:"Csub,attr"`
 	Version     string   `xml:"Cversion,attr"`
 	Description string   `xml:"description"`
 	Files       []MxFile `xml:"files>file"`

@@ -73,7 +73,7 @@ func TestCCLibraryString(t *testing.T) {
 	var srclist bStringList = []string{"a", "b", "c"}
 	srcs := attributeBStringList{Operand: attSrcs, Value: srclist}
 	var list attributeList = []attribute{name, srcs, linkOpt}
-	ccLibrary := ccLibraryRule{rule{Operands: list, comment: comment{Comment: "#Hello test"}}}
+	ccLibrary := CcLibraryRule{rule{Operands: list, comment: comment{Comment: "#Hello test"}}}
 	expected := "#Hello test\ncc_library(name=\"hello_world\",srcs=[\"a\",\"b\",\"c\",],linkstatic=\"True\",)\n"
 	got := ccLibrary.String()
 	if expected != got {

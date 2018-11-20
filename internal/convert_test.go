@@ -17,7 +17,7 @@ func TestMxComponentToCCLibrary(t *testing.T) {
 			MxFile{Category: "source", Name: `example.cc`},
 		},
 	}
-	expected := ccLibraryRule{rule{
+	expected := CcLibraryRule{rule{
 		Operands: attributeList{
 			attributeBStringList{Operand: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
 			attributeBStringList{Operand: attHdrs, Value: bStringList{"example.h"}},
@@ -25,7 +25,7 @@ func TestMxComponentToCCLibrary(t *testing.T) {
 		},
 		comment: comment{Comment: "# System Startup for STMicroelectronics, Device:Startup, version:2.1.0"},
 	}}
-	got := mxComponentToCcLibraryRule(component)
+	got := MxComponentToCcLibraryRule(component)
 	if !reflect.DeepEqual(expected, got) {
 		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
 	}
