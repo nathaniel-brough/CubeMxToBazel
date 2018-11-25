@@ -3,36 +3,46 @@ package cubemxtobazelinternal
 import (
 	"reflect"
 	"testing"
+
+	"github.com/go-test/deep"
 )
 
-func TestMxComponentToCCLibrary(t *testing.T) {
-	component := MxComponent{
-		Class:       "Device",
-		Group:       "Startup",
-		Version:     "2.1.0",
-		Description: "System Startup for STMicroelectronics",
-		Files: []MxFile{
-			MxFile{Category: "header", Name: `example.h`},
-			MxFile{Category: "sourceAsm", Name: `example.s`},
-			MxFile{Category: "source", Name: `example.cc`},
-		},
+func TestMxProjectToCCLibrary(t *testing.T) {
+	proj := projectImpl{components: MxComponents{
+		Components: []MxComponent{
+			MxComponent{
+				Class:       "Device",
+				Group:       "Startup",
+				Version:     "2.1.0",
+				Description: "System Startup for STMicroelectronics",
+				Files: []MxFile{
+					MxFile{Category: "header", Name: `example.h`},
+					MxFile{Category: "sourceAsm", Name: `example.s`},
+					MxFile{Category: "source", Name: `example.cc`},
+				}}},
+	},
 	}
-	expected := CcLibraryRule{rule{
+	expected := []CcLibraryRule{CcLibraryRule{rule{
 		Operands: attributeList{
+			attributeBString{Operand: "name", Value: bString(ccLibraryTargetName(proj.Components()[0]))},
 			attributeBStringList{Operand: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
 			attributeBStringList{Operand: attHdrs, Value: bStringList{"example.h"}},
 			attributeBBool{Operand: attLinkStatic, Value: true},
 		},
-		comment: comment{Comment: "# System Startup for STMicroelectronics, Device:Startup, version:2.1.0"},
-	}}
-	got := MxComponentToCcLibraryRule(component)
+		comment: comment{Comment: "# System Startup for STMicroelectronics  Device:Startup:, version:2.1.0"},
+	}}}
+	got := MxProjectToCcLibraryRules(proj)
 	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
+		t.Errorf("Expected:\n%#v \nGot:\n%#v \n Diff:\n", expected, got)
+		if diff := deep.Equal(got, expected); diff != nil {
+			t.Error(diff)
+		}
 	}
 }
 
-func TestMxComponentToCCBinary(t *testing.T) {
-	component := MxComponent{
+// TODO: Fix this test to use project files instead of components
+func TestMxProjectToCCBinary(t *testing.T) {
+	project := projectImpl{components: MxComponents{Components: []MxComponent{MxComponent{
 		Class:       "Device",
 		Group:       "Startup",
 		Version:     "2.1.0",
@@ -42,7 +52,8 @@ func TestMxComponentToCCBinary(t *testing.T) {
 			MxFile{Category: "sourceAsm", Name: `example.s`},
 			MxFile{Category: "source", Name: `example.cc`},
 		},
-	}
+	},
+	}}}
 	expected := ccBinaryRule{rule{
 		Operands: attributeList{
 			attributeBStringList{Operand: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
@@ -50,7 +61,7 @@ func TestMxComponentToCCBinary(t *testing.T) {
 		},
 		comment: comment{Comment: "# System Startup for STMicroelectronics, Device:Startup, version:2.1.0"},
 	}}
-	got := mxComponentToCcBinaryRule(component)
+	got := MxProjectToCcBinaryRule(project)
 	if !reflect.DeepEqual(expected, got) {
 		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
 	}

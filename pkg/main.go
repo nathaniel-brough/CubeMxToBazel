@@ -33,12 +33,13 @@ func main() {
 
 	ccLibRules := ""
 	for _, component := range components {
-		ccLibRules = ccLibRules + internal.MxComponentToCcLibraryRule(component).String()
+		ccLibRules = ccLibRules + internal.MxProjectToCcLibraryRule(component).String()
 	}
+	ccBinRules := internal.MxProjectToCcBinaryRule(project).String()
 	const (
 		BUILD = "BUILD"
 	)
-	ioutil.WriteFile(BUILD, []byte(string(ccLibRules)), 0664)
+	ioutil.WriteFile(BUILD, []byte(string(ccLibRules+ccBinRules)), 0664)
 }
 
 func findProjectFile() string {
