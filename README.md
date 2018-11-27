@@ -20,9 +20,20 @@ Select the "Other Toolchains (GPDSC)" configuration for your project in 'project
 
 ### Running generator
 
-```shell
+Running the generator is as simple as changing directories into the project and running the converter
+
+```sh
 cd YOUR_PROJECT_PATH_HERE
 $GOPATH/bin/CubeMxToBazel
+```
+
+The output of this is not neccesarily nice to look at, it is recommended to use bazel auto formatter for this.
+
+```sh
+# Install Autoformatter
+go install github.com/bazelbuild/buildtools/buildifier
+# Run formatter on generated build file
+$GOPATH/bin/buildifier BUILD
 ```
 
 ## Current Functionality
