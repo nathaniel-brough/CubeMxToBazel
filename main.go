@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -9,18 +10,17 @@ import (
 	internal "github.com/silvergasp/CubeMxToBazel/internal"
 )
 
-var projectFile string
+func main() {
 
-func init() {
+	// TODO:Fix command line args
 	const (
 		ProjectFileUsage = "Path to the project file, e.g. project.gpdsc"
 	)
 	// Project File input
-	flag.StringVar(&projectFile, "project_file", findProjectFile(), ProjectFileUsage)
-	flag.StringVar(&projectFile, "p", findProjectFile(), ProjectFileUsage+" (shorthand)")
-}
-
-func main() {
+	defaultProject := findProjectFile()
+	fmt.Println(defaultProject)
+	projectFile := *flag.String("project_file", defaultProject, ProjectFileUsage)
+	// End TODO
 	if projectFile == "" {
 		log.Fatal("No project file found in working directory and none specified")
 	}
@@ -29,17 +29,21 @@ func main() {
 		log.Fatalf("Error opening file: %s \n Error:%s", projectFile, err)
 	}
 	project := internal.ProjectInit(gpdscMxFile)
-	components := project.Components()
 
-	ccLibRules := ""
-	for _, component := range components {
-		ccLibRules = ccLibRules + internal.MxProjectToCcLibraryRule(component).String()
+	ccLibRules := internal.MxProjectToCcLibraryRules(project)
+	ccBinRules := internal.MxProjectToCcBinaryRule(project)
+
+	ccLibRulesStr := ""
+	for _, libRule := range ccLibRules {
+		ccLibRulesStr += libRule.String()
 	}
-	ccBinRules := internal.MxProjectToCcBinaryRule(project).String()
+	ccBinRuleStr := ccBinRules.String()
+	BUILDString := ccLibRulesStr + ccBinRuleStr
+
 	const (
 		BUILD = "BUILD"
 	)
-	ioutil.WriteFile(BUILD, []byte(string(ccLibRules+ccBinRules)), 0664)
+	ioutil.WriteFile(BUILD, []byte(string(BUILDString)), 0664)
 }
 
 func findProjectFile() string {

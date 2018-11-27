@@ -63,9 +63,9 @@ type bBool bool
 
 func (b bBool) String() string {
 	if b {
-		return `"True"`
+		return `True`
 	}
-	return `"False"`
+	return `False`
 }
 
 // bString Bazel string type

@@ -29,6 +29,9 @@ func mxFilesToBazelStringList(files MxFiles) bStringList {
 
 func ccLibraryTargetName(comp MxComponent) string {
 	name := stripWhiteSpace(strings.Join([]string{comp.Class, comp.Group, comp.Subsection}, "_"))
+	if name[len(name)-1] == '_' {
+		name = name[:len(name)-1]
+	}
 	return name
 }
 
@@ -71,13 +74,13 @@ func MxProjectToCcBinaryRule(proj Project) ccBinaryRule {
 	headerFiles := files.HeaderFiles().Files()
 	asmFiles := files.AssemblyFiles().Files()
 
-	bazelTargetComment := fmt.Sprintf("# %s, Device:%s", proj.Info().Name, proj.DeviceName())
+	bazelTargetComment := "# Main target"
 	bazelSourceFiles := append(mxFilesToBazelStringList(sourceFiles), mxFilesToBazelStringList(asmFiles)...)
 	bazelSourceFiles = append(bazelSourceFiles, mxFilesToBazelStringList(headerFiles)...)
 	bazelHeaderFiles := mxFilesToBazelStringList(headerFiles)
 
 	// Generated attributes
-	name := bString(stripWhiteSpace(strings.Join([]string{proj.Info().Name, proj.DeviceName()}, "_")))
+	name := bString("main")
 	bazelNameAttr := attributeBString{Operand: attName, Value: name}
 	bazelSourceAttr := attributeBStringList{Operand: attSrcs, Value: bazelSourceFiles}
 	bazelHeaderAttr := attributeBStringList{Operand: attHdrs, Value: bazelHeaderFiles}
