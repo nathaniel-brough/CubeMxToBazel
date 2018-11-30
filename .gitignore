@@ -13,3 +13,4 @@
 
 # Ignore generated Bazel build files
 *BUILD
+*WORKSPACE

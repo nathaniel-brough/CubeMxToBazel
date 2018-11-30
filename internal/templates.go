@@ -9,14 +9,14 @@ import (
 
 // CC rule string templates
 const (
-	ccBinaryTemplate  = "{{.Comment}}\ncc_binary({{.Operands}})\n"
-	ccLibraryTemplate = "{{.Comment}}\ncc_library({{.Operands}})\n"
-	ccImportTemplate  = "{{.Comment}}\ncc_import({{.Operands}})\n"
+	ccBinaryTemplate  = "{{.Comment}}\ncc_binary({{.Keys}})\n"
+	ccLibraryTemplate = "{{.Comment}}\ncc_library({{.Keys}})\n"
+	ccImportTemplate  = "{{.Comment}}\ncc_import({{.Keys}})\n"
 )
 
 // Operand templates
 const (
-	operandTemplate = "{{.Operand}}={{.Value}},{{.Comment}}"
+	operandTemplate = "{{.Key}}={{.Value}},{{.Comment}}"
 )
 
 // Common Attribute List
@@ -96,8 +96,8 @@ type attribute interface {
 // attributeBase is the most basic raw type that all other types are converted to before being converted to a string
 type attributeBase struct {
 	comment
-	Operand string
-	Value   string
+	Key   string
+	Value string
 }
 
 // attributeBase conversion to a string
@@ -115,35 +115,35 @@ func (at attributeBase) String() string {
 // attributeBString conversion to a string
 type attributeBString struct {
 	comment
-	Operand string
-	Value   bString
+	Key   string
+	Value bString
 }
 
 // attributeBString conversion to base type
 func (at attributeBString) Attribute() attributeBase {
-	return attributeBase{Operand: at.Operand, Value: at.Value.String()}
+	return attributeBase{Key: at.Key, Value: at.Value.String()}
 }
 
 // attributeBStringList Bazel List of strings attribute
 type attributeBStringList struct {
 	comment
-	Operand string
-	Value   bStringList
+	Key   string
+	Value bStringList
 }
 
 // attributeBStringList
 func (at attributeBStringList) Attribute() attributeBase {
-	return attributeBase{Operand: at.Operand, Value: at.Value.String(), comment: comment{at.Comment}}
+	return attributeBase{Key: at.Key, Value: at.Value.String(), comment: comment{at.Comment}}
 }
 
 type attributeBBool struct {
 	comment
-	Operand string
-	Value   bBool
+	Key   string
+	Value bBool
 }
 
 func (at attributeBBool) Attribute() attributeBase {
-	return attributeBase{Operand: at.Operand, Value: at.Value.String(), comment: comment{at.Comment}}
+	return attributeBase{Key: at.Key, Value: at.Value.String(), comment: comment{at.Comment}}
 }
 
 type attributeList []attribute
@@ -158,7 +158,7 @@ func (list attributeList) String() string {
 
 type rule struct {
 	comment
-	Operands attributeList
+	Keys attributeList
 }
 
 type CcLibraryRule struct {

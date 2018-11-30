@@ -148,32 +148,35 @@ func TestParsePackageConditions(t *testing.T) {
 	}
 }
 
-func TestParsePackageProjectInitComponents(t *testing.T) {
-	gpdsc := data.SampleStm32Gpdsc()
-
-	got := ProjectInit(gpdsc)
-	startupFiles := []MxFile{
-		MxFile{Category: "header", Condition: "", Name: `Drivers\CMSIS\Device\ST\STM32L4xx\Include\stm32l4xx.h`},
-		MxFile{Category: "sourceAsm", Condition: "IAR Toolchain", Name: `Drivers\CMSIS\Device\ST\STM32L4xx\Source\Templates\iar\startup_stm32l432xx.s`},
-		MxFile{Category: "sourceAsm", Condition: "GCC Toolchain", Name: `Drivers\CMSIS\Device\ST\STM32L4xx\Source\Templates\gcc\startup_stm32l432xx.s`},
+func TestMxLibraryIncludePath(t *testing.T) {
+	invalidComponent := MxComponent{
+		Class: "Device",
+		Group: "Startup",
+		Files: []MxFile{
+			MxFile{Category: "header", Name: `a/example.h`},
+			MxFile{Category: "header", Name: `b/example.h`},
+		}}
+	invalidExpected := ""
+	invalidGot, err := getLibraryIncludePath(invalidComponent)
+	if err == nil {
+		t.Error("Expected Error Here")
 	}
-	expectedComponents := []MxComponent{
-		MxComponent{
-			Class:       "CMSIS",
-			Group:       "CORE",
-			Version:     "4.0.0",
-			Description: "CMSIS-CORE for ARM",
-			Files:       []MxFile{MxFile{Category: "header", Name: `Drivers\CMSIS\Include\core_cm4.h`}},
-		},
-		MxComponent{
-			Class:       "Device",
-			Group:       "Startup",
-			Version:     "2.1.0",
-			Description: "System Startup for STMicroelectronics",
-			Files:       startupFiles,
-		},
+	if !reflect.DeepEqual(invalidExpected, invalidGot) {
+		t.Errorf("Invalid - Expected:\n%#v \nGot:\n%#v \n", invalidExpected, invalidGot)
 	}
-	if diff := deep.Equal(got.Components(), expectedComponents); diff != nil {
-		t.Error(diff)
+	validComponent := MxComponent{
+		Class: "Device",
+		Group: "Startup",
+		Files: []MxFile{
+			MxFile{Category: "header", Name: `a/example.h`},
+			MxFile{Category: "header", Name: `a/example.h`},
+		}}
+	validExpected := "a"
+	validGot, err := getLibraryIncludePath(validComponent)
+	if validExpected != validGot {
+		t.Errorf("Valid - Expected:\n%#v \nGot:\n%#v \n", validExpected, validGot)
+	}
+	if err != nil {
+		t.Error("Did not expect error here")
 	}
 }

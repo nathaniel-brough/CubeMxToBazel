@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+	"github.com/silvergasp/CubeMxToBazel/data"
 )
 
 func TestMxProjectToCCLibrary(t *testing.T) {
@@ -23,11 +24,11 @@ func TestMxProjectToCCLibrary(t *testing.T) {
 	},
 	}
 	expected := []CcLibraryRule{CcLibraryRule{rule{
-		Operands: attributeList{
-			attributeBString{Operand: "name", Value: bString(ccLibraryTargetName(proj.Components()[0]))},
-			attributeBStringList{Operand: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
-			attributeBStringList{Operand: attHdrs, Value: bStringList{"example.h"}},
-			attributeBBool{Operand: attLinkStatic, Value: true},
+		Keys: attributeList{
+			attributeBString{Key: "name", Value: bString(ccLibraryTargetName(proj.Components()[0]))},
+			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
+			attributeBStringList{Key: attHdrs, Value: bStringList{"example.h"}},
+			attributeBBool{Key: attLinkStatic, Value: true},
 		},
 		comment: comment{Comment: "# System Startup for STMicroelectronics  Device:Startup:, version:2.1.0"},
 	}}}
@@ -57,16 +58,45 @@ func TestMxProjectToCCBinary(t *testing.T) {
 			},
 		}}}
 	expected := ccBinaryRule{rule{
-		Operands: attributeList{
-			attributeBString{Operand: "name", Value: "main"},
-			attributeBStringList{Operand: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
-			attributeBStringList{Operand: attHdrs, Value: bStringList{"example.h"}},
-			attributeBStringList{Operand: "deps", Value: bStringList{":" + ccLibraryTargetName(project.components.Components[0])}},
+		Keys: attributeList{
+			attributeBString{Key: "name", Value: "main"},
+			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
+			attributeBStringList{Key: "deps", Value: bStringList{":" + ccLibraryTargetName(project.components.Components[0])}},
 		},
 		comment: comment{Comment: "# Main target"},
 	}}
 	got := MxProjectToCcBinaryRule(project)
 	if !reflect.DeepEqual(expected, got) {
 		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
+	}
+}
+
+func TestParsePackageProjectInitComponents(t *testing.T) {
+	gpdsc := data.SampleStm32Gpdsc()
+
+	got := ProjectInit(gpdsc)
+	startupFiles := []MxFile{
+		MxFile{Category: "header", Condition: "", Name: `Drivers\CMSIS\Device\ST\STM32L4xx\Include\stm32l4xx.h`},
+		MxFile{Category: "sourceAsm", Condition: "IAR Toolchain", Name: `Drivers\CMSIS\Device\ST\STM32L4xx\Source\Templates\iar\startup_stm32l432xx.s`},
+		MxFile{Category: "sourceAsm", Condition: "GCC Toolchain", Name: `Drivers\CMSIS\Device\ST\STM32L4xx\Source\Templates\gcc\startup_stm32l432xx.s`},
+	}
+	expectedComponents := []MxComponent{
+		MxComponent{
+			Class:       "CMSIS",
+			Group:       "CORE",
+			Version:     "4.0.0",
+			Description: "CMSIS-CORE for ARM",
+			Files:       []MxFile{MxFile{Category: "header", Name: `Drivers\CMSIS\Include\core_cm4.h`}},
+		},
+		MxComponent{
+			Class:       "Device",
+			Group:       "Startup",
+			Version:     "2.1.0",
+			Description: "System Startup for STMicroelectronics",
+			Files:       startupFiles,
+		},
+	}
+	if diff := deep.Equal(got.Components(), expectedComponents); diff != nil {
+		t.Error(diff)
 	}
 }
