@@ -147,36 +147,3 @@ func TestParsePackageConditions(t *testing.T) {
 		t.Error(diff)
 	}
 }
-
-func TestMxLibraryIncludePath(t *testing.T) {
-	invalidComponent := MxComponent{
-		Class: "Device",
-		Group: "Startup",
-		Files: []MxFile{
-			MxFile{Category: "header", Name: `a/example.h`},
-			MxFile{Category: "header", Name: `b/example.h`},
-		}}
-	invalidExpected := ""
-	invalidGot, err := getLibraryIncludePath(invalidComponent)
-	if err == nil {
-		t.Error("Expected Error Here")
-	}
-	if !reflect.DeepEqual(invalidExpected, invalidGot) {
-		t.Errorf("Invalid - Expected:\n%#v \nGot:\n%#v \n", invalidExpected, invalidGot)
-	}
-	validComponent := MxComponent{
-		Class: "Device",
-		Group: "Startup",
-		Files: []MxFile{
-			MxFile{Category: "header", Name: `a/example.h`},
-			MxFile{Category: "header", Name: `a/example.h`},
-		}}
-	validExpected := "a"
-	validGot, err := getLibraryIncludePath(validComponent)
-	if validExpected != validGot {
-		t.Errorf("Valid - Expected:\n%#v \nGot:\n%#v \n", validExpected, validGot)
-	}
-	if err != nil {
-		t.Error("Did not expect error here")
-	}
-}

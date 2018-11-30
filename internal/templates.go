@@ -176,11 +176,11 @@ func (r CcLibraryRule) String() string {
 	return output.String()
 }
 
-type ccBinaryRule struct {
+type CcBinaryRule struct {
 	rule
 }
 
-func (r ccBinaryRule) String() string {
+func (r CcBinaryRule) String() string {
 	templateName := "cc_binary"
 	t := template.Must(template.New(templateName).Parse(ccBinaryTemplate))
 	var output bytes.Buffer

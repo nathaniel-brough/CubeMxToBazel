@@ -17,7 +17,8 @@ func TestMxProjectToCCLibrary(t *testing.T) {
 				Version:     "2.1.0",
 				Description: "System Startup for STMicroelectronics",
 				Files: []MxFile{
-					MxFile{Category: "header", Name: `example.h`},
+					MxFile{Category: "header", Name: `Drivers\STM32L4xx_HAL_Driver\Inc\stm32l4xx_hal_gpio.h`},
+					MxFile{Category: "header", Name: `Drivers\STM32L4xx_HAL_Driver\Inc\stm32l4xx_hal_gpio_ex.h`},
 					MxFile{Category: "sourceAsm", Name: `example.s`},
 					MxFile{Category: "source", Name: `example.cc`},
 				}}},
@@ -26,22 +27,20 @@ func TestMxProjectToCCLibrary(t *testing.T) {
 	expected := []CcLibraryRule{CcLibraryRule{rule{
 		Keys: attributeList{
 			attributeBString{Key: "name", Value: bString(ccLibraryTargetName(proj.Components()[0]))},
-			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
-			attributeBStringList{Key: attHdrs, Value: bStringList{"example.h"}},
+			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s", "Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio.h", "Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio_ex.h"}},
+			attributeBStringList{Key: attHdrs, Value: bStringList{"Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio.h", "Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio_ex.h"}},
+			attributeBStringList{Key: attIncludes, Value: bStringList([]string{"Drivers/STM32L4xx_HAL_Driver/Inc"})},
+			attributeBString{Key: attStripIncludePrefix, Value: "."},
 			attributeBBool{Key: attLinkStatic, Value: true},
 		},
 		comment: comment{Comment: "# System Startup for STMicroelectronics  Device:Startup:, version:2.1.0"},
 	}}}
 	got := MxProjectToCcLibraryRules(proj)
 	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("Expected:\n%#v \nGot:\n%#v \n Diff:\n", expected, got)
-		if diff := deep.Equal(got, expected); diff != nil {
-			t.Error(diff)
-		}
+		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
 	}
 }
 
-// TODO: Fix this test to use project files instead of components
 func TestMxProjectToCCBinary(t *testing.T) {
 	project := projectImpl{generator: MxGenerator{
 		ProjectFiles: []MxFile{
@@ -57,7 +56,7 @@ func TestMxProjectToCCBinary(t *testing.T) {
 				Description: "System Startup for STMicroelectronics",
 			},
 		}}}
-	expected := ccBinaryRule{rule{
+	expected := CcBinaryRule{rule{
 		Keys: attributeList{
 			attributeBString{Key: "name", Value: "main"},
 			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s", "example.h"}},
@@ -96,7 +95,23 @@ func TestParsePackageProjectInitComponents(t *testing.T) {
 			Files:       startupFiles,
 		},
 	}
+
+	if !reflect.DeepEqual(expectedComponents, got.Components()) {
+		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expectedComponents, got.Components())
+	}
 	if diff := deep.Equal(got.Components(), expectedComponents); diff != nil {
 		t.Error(diff)
+	}
+}
+
+func TestMxLibraryIncludePath(t *testing.T) {
+	Files := MxFiles{
+		MxFile{Category: "header", Name: `a/a/example.h`},
+		MxFile{Category: "header", Name: `b/a/example.h`},
+	}
+	expected := []string{"a/a", "b/a"}
+	got := getLibraryIncludePaths(Files)
+	if !reflect.DeepEqual(expected, got) {
+		t.Errorf("Expected:\n%#v \nGot:\n%#v \n", expected, got)
 	}
 }

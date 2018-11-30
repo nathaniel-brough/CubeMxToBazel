@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -70,7 +71,6 @@ func ProjectInit(gpdsc []byte) Project {
 	project.components = project.components.resolveComponentConflict()
 	// Homogenise descriptions for each component
 	project.components.homogeniseDescriptions()
-	// Add component include paths
 
 	return project
 }
@@ -83,15 +83,39 @@ func ccLibraryTargetName(comp MxComponent) string {
 	return name
 }
 
+func getLibraryIncludePaths(files MxFiles) []string {
+	headerFiles := files.HeaderFiles().Files()
+	// map[directories]no_of_occurances
+	includeDir := make(map[string]int)
+	for _, file := range headerFiles {
+		directory := filepath.Dir(string(mxFileToBazelString(file)))
+		count, exists := includeDir[directory]
+		if !exists {
+			includeDir[directory] = 1
+		} else {
+			includeDir[directory] = count + 1
+		}
+	}
+	result := []string{}
+	for directory := range includeDir {
+		result = append(result, directory)
+		fmt.Println(directory)
+	}
+	return result
+}
+
 // MxProjectToCcLibraryRules converts the project components into bazel cc_library rules
 func MxProjectToCcLibraryRules(proj Project) []CcLibraryRule {
 	rules := []CcLibraryRule{}
 	components := proj.Components()
 	for _, comp := range components {
 		var files MxFiles = comp.Files
-		sourceFiles := files.SourceFiles().Files()
-		headerFiles := files.HeaderFiles().Files()
-		asmFiles := files.AssemblyFiles().Files()
+		// TODO: Make this generic so that IAR compiler is supported
+		gccFiltered := append(files.Condition("GCC Toolchain").Files(), files.Condition("").Files()...)
+		sourceFiles := gccFiltered.SourceFiles().Files()
+		headerFiles := gccFiltered.HeaderFiles().Files()
+		asmFiles := gccFiltered.AssemblyFiles().Files()
+		includeDirectories := getLibraryIncludePaths(gccFiltered)
 
 		bazelTargetComment := fmt.Sprintf("# %s  %s:%s:%s, version:%s", comp.Description, comp.Class, comp.Group, comp.Subsection, comp.Version)
 		bazelSourceFiles := append(mxFilesToBazelStringList(sourceFiles), mxFilesToBazelStringList(asmFiles)...)
@@ -103,13 +127,16 @@ func MxProjectToCcLibraryRules(proj Project) []CcLibraryRule {
 		bazelNameAttr := attributeBString{Key: attName, Value: name}
 		bazelSourceAttr := attributeBStringList{Key: attSrcs, Value: bazelSourceFiles}
 		bazelHeaderAttr := attributeBStringList{Key: attHdrs, Value: bazelHeaderFiles}
+		bazelIncludeAttr := attributeBStringList{Key: attIncludes, Value: bStringList(includeDirectories)}
 
 		// Additional attributes
 		// Static linking only
 		linkStaticAttr := attributeBBool{Key: attLinkStatic, Value: true}
+		// TODO: Remove this attribute when ARM_GCC_NONE can use -system flag without extern "C" guards, ETA:"Q4 2019"
+		bazelStripIncludeAttr := attributeBString{Key: attStripIncludePrefix, Value: bString(".")}
 
 		// Combination of all attributes
-		allAttr := attributeList{bazelNameAttr, bazelSourceAttr, bazelHeaderAttr, linkStaticAttr}
+		allAttr := attributeList{bazelNameAttr, bazelSourceAttr, bazelHeaderAttr, bazelIncludeAttr, bazelStripIncludeAttr, linkStaticAttr}
 		libraryRule := CcLibraryRule{rule{Keys: allAttr, comment: comment{Comment: bazelTargetComment}}}
 		rules = append(rules, libraryRule)
 	}
@@ -117,11 +144,13 @@ func MxProjectToCcLibraryRules(proj Project) []CcLibraryRule {
 }
 
 // MxProjectToCcBinaryRule converts the project files into a bazel cc_binary rule
-func MxProjectToCcBinaryRule(proj Project) ccBinaryRule {
+func MxProjectToCcBinaryRule(proj Project) CcBinaryRule {
 	var files MxFiles = proj.ProjectFiles()
-	sourceFiles := files.SourceFiles().Files()
-	headerFiles := files.HeaderFiles().Files()
-	asmFiles := files.AssemblyFiles().Files()
+	// TODO: Make this generic so that IAR can be used
+	gccFiltered := append(files.Condition("GCC Toolchain").Files(), files.Condition("").Files()...)
+	sourceFiles := gccFiltered.SourceFiles().Files()
+	headerFiles := gccFiltered.HeaderFiles().Files()
+	asmFiles := gccFiltered.AssemblyFiles().Files()
 
 	bazelTargetComment := "# Main target"
 	bazelSourceFiles := append(mxFilesToBazelStringList(sourceFiles), mxFilesToBazelStringList(asmFiles)...)
@@ -144,7 +173,7 @@ func MxProjectToCcBinaryRule(proj Project) ccBinaryRule {
 
 	// Combination of all attributes
 	allAttr := attributeList{bazelNameAttr, bazelSourceAttr, bazelDepsAttr}
-	binaryRule := ccBinaryRule{rule{Keys: allAttr, comment: comment{Comment: bazelTargetComment}}}
+	binaryRule := CcBinaryRule{rule{Keys: allAttr, comment: comment{Comment: bazelTargetComment}}}
 	return binaryRule
 }
 

@@ -87,7 +87,7 @@ func TestCCBinaryString(t *testing.T) {
 	var srclist bStringList = []string{"a", "b", "c"}
 	srcs := attributeBStringList{Key: attSrcs, Value: srclist}
 	var list attributeList = []attribute{name, srcs, linkOpt}
-	ccBinary := ccBinaryRule{rule{Keys: list, comment: comment{Comment: "#Hello test"}}}
+	ccBinary := CcBinaryRule{rule{Keys: list, comment: comment{Comment: "#Hello test"}}}
 	expected := "#Hello test\ncc_binary(name=\"hello_world\",srcs=[\"a\",\"b\",\"c\",],linkstatic=True,)\n"
 	got := ccBinary.String()
 	if expected != got {

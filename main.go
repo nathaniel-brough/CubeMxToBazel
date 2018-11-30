@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -18,7 +17,6 @@ func main() {
 	)
 	// Project File input
 	defaultProject := findProjectFile()
-	fmt.Println(defaultProject)
 	projectFile := *flag.String("project_file", defaultProject, ProjectFileUsage)
 	// End TODO
 	if projectFile == "" {
