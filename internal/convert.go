@@ -10,6 +10,23 @@ import (
 	"sync"
 )
 
+const (
+	// Bazel package variables
+	headerFiles  = "header_files"
+	includePaths = "include_paths"
+)
+
+const (
+	// Global Bazel constants
+	varAllHeaders  = "ALL_HEADERS"
+	varAllIncludes = "ALL_HEADERS"
+)
+
+const (
+	// Target Names
+	targetMain = "main"
+)
+
 // winToNixPath converts a relative windows path to a nix style path
 func winToNixPath(path string) string {
 	// Simply replace all backslash with forward slash
@@ -35,7 +52,6 @@ func mxFilesToBazelStringList(files MxFiles) bStringList {
 // ProjectInit parses a raw gpdsc file and initialises the project structure
 func ProjectInit(gpdsc []byte) Project {
 	project := projectImpl{}
-
 	// Used for multithreading unmarshall
 	var wg sync.WaitGroup
 	unmarshal := func(f interface{}) {
@@ -45,7 +61,6 @@ func ProjectInit(gpdsc []byte) Project {
 			log.Fatal("gpdsc unmarshall failed:\n", err)
 		}
 	}
-
 	// Unmarshal project info
 	wg.Add(1)
 	go unmarshal(&project.info)
@@ -64,19 +79,16 @@ func ProjectInit(gpdsc []byte) Project {
 	// Unmarshal project conditions
 	wg.Add(1)
 	go unmarshal(&project.conditions)
-
 	wg.Wait()
-
 	// Resolve target naming conflicts
 	project.components = project.components.resolveComponentConflict()
 	// Homogenise descriptions for each component
 	project.components.homogeniseDescriptions()
-
 	return project
 }
 
 func ccLibraryTargetName(comp MxComponent) string {
-	name := stripWhiteSpace(strings.Join([]string{comp.Class, comp.Group, comp.Subsection}, "_"))
+	name := stripWhiteSpace(strings.Join([]string{comp.Class, comp.Group}, "_"))
 	if name[len(name)-1] == '_' {
 		name = name[:len(name)-1]
 	}
@@ -99,9 +111,31 @@ func getLibraryIncludePaths(files MxFiles) []string {
 	result := []string{}
 	for directory := range includeDir {
 		result = append(result, directory)
-		fmt.Println(directory)
 	}
 	return result
+}
+
+func getAllHeaders(proj Project) MxFiles {
+	projFiles := proj.ProjectFiles()
+	components := proj.Components()
+	allFiles := MxFiles(projFiles)
+	for _, component := range components {
+		allFiles = append(allFiles, component.Files...)
+	}
+	allHeaderFiles := allFiles.HeaderFiles().Files()
+	return allHeaderFiles
+}
+
+func getAllIncludePaths(proj Project) []string {
+	allHeaders := getAllHeaders(proj)
+	includePaths := getLibraryIncludePaths(allHeaders)
+	return includePaths
+}
+
+func getDeviceDefine(proj Project) string {
+	deviceName := proj.DeviceName()
+	deviceName = deviceName[0:9] + "xx"
+	return deviceName
 }
 
 // MxProjectToCcLibraryRules converts the project components into bazel cc_library rules
@@ -113,30 +147,31 @@ func MxProjectToCcLibraryRules(proj Project) []CcLibraryRule {
 		// TODO: Make this generic so that IAR compiler is supported
 		gccFiltered := append(files.Condition("GCC Toolchain").Files(), files.Condition("").Files()...)
 		sourceFiles := gccFiltered.SourceFiles().Files()
-		headerFiles := gccFiltered.HeaderFiles().Files()
 		asmFiles := gccFiltered.AssemblyFiles().Files()
-		includeDirectories := getLibraryIncludePaths(gccFiltered)
+		// includeDirectories := getLibraryIncludePaths(gccFiltered)
+		includeDirectories := getAllIncludePaths(proj)
 
 		bazelTargetComment := fmt.Sprintf("# %s  %s:%s:%s, version:%s", comp.Description, comp.Class, comp.Group, comp.Subsection, comp.Version)
 		bazelSourceFiles := append(mxFilesToBazelStringList(sourceFiles), mxFilesToBazelStringList(asmFiles)...)
-		bazelSourceFiles = append(bazelSourceFiles, mxFilesToBazelStringList(headerFiles)...)
-		bazelHeaderFiles := mxFilesToBazelStringList(headerFiles)
+		bazelHeaderGlob := `glob(["**/*.h"])`
 
 		// Generated attributes
 		name := bString(ccLibraryTargetName(comp))
 		bazelNameAttr := attributeBString{Key: attName, Value: name}
 		bazelSourceAttr := attributeBStringList{Key: attSrcs, Value: bazelSourceFiles}
-		bazelHeaderAttr := attributeBStringList{Key: attHdrs, Value: bazelHeaderFiles}
+		bazelHeaderAttr := attributeBVariable{Key: attHdrs, Value: bazelHeaderGlob}
 		bazelIncludeAttr := attributeBStringList{Key: attIncludes, Value: bStringList(includeDirectories)}
 
 		// Additional attributes
 		// Static linking only
-		linkStaticAttr := attributeBBool{Key: attLinkStatic, Value: true}
+		bazelLinkStaticAttr := attributeBBool{Key: attLinkStatic, Value: true}
+		// CC Defines
+		bazelDefineAttr := attributeBStringList{Key: attDefines, Value: []string{"USE_HAL_DRIVER", getDeviceDefine(proj)}}
 		// TODO: Remove this attribute when ARM_GCC_NONE can use -system flag without extern "C" guards, ETA:"Q4 2019"
 		bazelStripIncludeAttr := attributeBString{Key: attStripIncludePrefix, Value: bString(".")}
 
 		// Combination of all attributes
-		allAttr := attributeList{bazelNameAttr, bazelSourceAttr, bazelHeaderAttr, bazelIncludeAttr, bazelStripIncludeAttr, linkStaticAttr}
+		allAttr := attributeList{bazelNameAttr, bazelSourceAttr, bazelHeaderAttr, bazelIncludeAttr, bazelStripIncludeAttr, bazelLinkStaticAttr, bazelDefineAttr}
 		libraryRule := CcLibraryRule{rule{Keys: allAttr, comment: comment{Comment: bazelTargetComment}}}
 		rules = append(rules, libraryRule)
 	}
@@ -157,7 +192,7 @@ func MxProjectToCcBinaryRule(proj Project) CcBinaryRule {
 	bazelSourceFiles = append(bazelSourceFiles, mxFilesToBazelStringList(headerFiles)...)
 
 	// Generated attributes
-	name := bString("main")
+	name := bString(targetMain)
 	bazelNameAttr := attributeBString{Key: attName, Value: name}
 	bazelSourceAttr := attributeBStringList{Key: attSrcs, Value: bazelSourceFiles}
 
@@ -212,4 +247,47 @@ func (comp MxComponents) resolveComponentConflict() MxComponents {
 	}
 
 	return MxComponents{Components: result}
+}
+
+func combineComponents(project Project) Project {
+	components := project.Components()
+	ComponentNames := make(map[string]MxComponent)
+	for _, comp := range components {
+		comp.Version = ""
+		name := ccLibraryTargetName(comp)
+		val, exist := ComponentNames[name]
+		if !exist {
+			ComponentNames[name] = comp
+		} else {
+			files := comp.Files
+			val.Files = append(val.Files, files...)
+			ComponentNames[name] = val
+		}
+	}
+	result := []MxComponent{}
+	for _, val := range ComponentNames {
+		result = append(result, val)
+	}
+	return project
+}
+
+// BazelPackageVariables contains the scoped package variables that will be accessible from the build files
+type BazelPackageVariables struct {
+	headerFiles  bStringList
+	includePaths bStringList
+}
+
+func (vars BazelPackageVariables) String() string {
+	headerAttr := attributeBStringList{Key: headerFiles, Value: vars.headerFiles}
+	includeAttr := attributeBStringList{Key: includePaths, Value: vars.headerFiles}
+	result := fmt.Sprintf("%s\n%s\n", headerAttr.Attribute().String(),
+		includeAttr.Attribute().String())
+	return result
+}
+
+// BazelVariablesInit intitialises all bazel variables based off a Project
+func BazelVariablesInit(project Project) BazelPackageVariables {
+	Headers := bStringList(mxFilesToBazelStringList(getAllHeaders(project)))
+	IncludePaths := bStringList(getAllIncludePaths(project))
+	return BazelPackageVariables{headerFiles: Headers, includePaths: IncludePaths}
 }

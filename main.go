@@ -5,11 +5,22 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"sync"
 
 	internal "github.com/silvergasp/CubeMxToBazel/internal"
+
+	"github.com/gobuffalo/packr/v2"
 )
 
 func main() {
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		// Decrement the counter when the goroutine completes.
+		defer wg.Done()
+		setupBazelWorkspace()
+	}()
 
 	// TODO:Fix command line args
 	const (
@@ -42,6 +53,7 @@ func main() {
 		BUILD = "BUILD"
 	)
 	ioutil.WriteFile(BUILD, []byte(string(BUILDString)), 0664)
+	wg.Wait()
 }
 
 func findProjectFile() string {
@@ -58,4 +70,16 @@ func findProjectFile() string {
 		log.Fatal("Multiple project files, only one valid .gpdsc file can be in the project root")
 	}
 	return ""
+}
+
+func setupBazelWorkspace() {
+	box := packr.New("WORKSPACE_BOX", "./static_bazel_files")
+	workspaceFile, err := box.Find("WORKSPACE")
+	if err != nil {
+		log.Fatal("Could not find embedded bazel WORKSPACE file ", err)
+	}
+	err = ioutil.WriteFile("WORKSPACE", workspaceFile, 0644)
+	if err != nil {
+		log.Fatal("Could not write embedded bazel WORKSPACE file ", err)
+	}
 }

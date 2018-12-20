@@ -14,9 +14,9 @@ const (
 	ccImportTemplate  = "{{.Comment}}\ncc_import({{.Keys}})\n"
 )
 
-// Operand templates
+// Attribute templates
 const (
-	operandTemplate = "{{.Key}}={{.Value}},{{.Comment}}"
+	attributeTemplate = "{{.Key}}={{.Value}},{{.Comment}}"
 )
 
 // Common Attribute List
@@ -103,13 +103,24 @@ type attributeBase struct {
 // attributeBase conversion to a string
 func (at attributeBase) String() string {
 	templateName := "operand"
-	t := template.Must(template.New(templateName).Parse(operandTemplate))
+	t := template.Must(template.New(templateName).Parse(attributeTemplate))
 	var output bytes.Buffer
 	err := t.Execute(&output, at)
 	if err != nil {
 		log.Println("Executing template:", err)
 	}
 	return output.String()
+}
+
+// attributeBVariable wraps attributeBase for use with variables
+type attributeBVariable struct {
+	comment
+	Key   string
+	Value string
+}
+
+func (at attributeBVariable) Attribute() attributeBase {
+	return attributeBase{Key: at.Key, Value: at.Value}
 }
 
 // attributeBString conversion to a string
