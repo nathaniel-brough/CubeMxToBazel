@@ -9,31 +9,34 @@ import (
 )
 
 func TestMxProjectToCCLibrary(t *testing.T) {
-	proj := projectImpl{components: MxComponents{
-		Components: []MxComponent{
-			MxComponent{
-				Class:       "Device",
-				Group:       "Startup",
-				Version:     "2.1.0",
-				Description: "System Startup for STMicroelectronics",
-				Files: []MxFile{
-					MxFile{Category: "header", Name: `Drivers\STM32L4xx_HAL_Driver\Inc\stm32l4xx_hal_gpio.h`},
-					MxFile{Category: "header", Name: `Drivers\STM32L4xx_HAL_Driver\Inc\stm32l4xx_hal_gpio_ex.h`},
-					MxFile{Category: "sourceAsm", Name: `example.s`},
-					MxFile{Category: "source", Name: `example.cc`},
-				}}},
-	},
+	proj := projectImpl{
+		components: MxComponents{
+			Components: []MxComponent{
+				MxComponent{
+					Class:       "Device",
+					Description: "System Startup for STMicroelectronics",
+					Files: []MxFile{
+						MxFile{Category: "header", Name: `Drivers\STM32L4xx_HAL_Driver\Inc\stm32l4xx_hal_gpio.h`},
+						MxFile{Category: "header", Name: `Drivers\STM32L4xx_HAL_Driver\Inc\stm32l4xx_hal_gpio_ex.h`},
+						MxFile{Category: "sourceAsm", Name: `example.s`},
+						MxFile{Category: "source", Name: `example.cc`},
+					}}},
+		},
+		generator: MxGenerator{
+			Select: MxSelect{DeviceName: "STM32L432KCUx"},
+		},
 	}
 	expected := []CcLibraryRule{CcLibraryRule{rule{
 		Keys: attributeList{
 			attributeBString{Key: "name", Value: bString(ccLibraryTargetName(proj.Components()[0]))},
-			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s", "Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio.h", "Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio_ex.h"}},
-			attributeBStringList{Key: attHdrs, Value: bStringList{"Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio.h", "Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio_ex.h"}},
+			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s"}},
+			attributeBVariable{Key: attHdrs, Value: `glob(["**/*.h"])`},
 			attributeBStringList{Key: attIncludes, Value: bStringList([]string{"Drivers/STM32L4xx_HAL_Driver/Inc"})},
 			attributeBString{Key: attStripIncludePrefix, Value: "."},
 			attributeBBool{Key: attLinkStatic, Value: true},
+			attributeBStringList{Key: attDefines, Value: []string{"USE_HAL_DRIVER", getDeviceDefine(proj)}},
 		},
-		comment: comment{Comment: "# System Startup for STMicroelectronics  Device:Startup:, version:2.1.0"},
+		comment: comment{Comment: "# Device - System Startup for STMicroelectronics"},
 	}}}
 	got := MxProjectToCcLibraryRules(proj)
 	if !reflect.DeepEqual(expected, got) {
@@ -83,14 +86,14 @@ func TestParsePackageProjectInitComponents(t *testing.T) {
 		MxComponent{
 			Class:       "CMSIS",
 			Group:       "CORE",
-			Version:     "4.0.0",
+			Version:     "",
 			Description: "CMSIS-CORE for ARM",
 			Files:       []MxFile{MxFile{Category: "header", Name: `Drivers\CMSIS\Include\core_cm4.h`}},
 		},
 		MxComponent{
 			Class:       "Device",
 			Group:       "Startup",
-			Version:     "2.1.0",
+			Version:     "",
 			Description: "System Startup for STMicroelectronics",
 			Files:       startupFiles,
 		},

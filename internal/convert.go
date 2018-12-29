@@ -135,6 +135,9 @@ func getAllIncludePaths(proj Project) []string {
 
 func getDeviceDefine(proj Project) string {
 	deviceName := proj.DeviceName()
+	if len(deviceName) < 10 {
+		log.Fatal("Device name is invalid, Device Name:", deviceName)
+	}
 	deviceName = deviceName[0:9] + "xx"
 	return deviceName
 }
@@ -152,7 +155,7 @@ func MxProjectToCcLibraryRules(proj Project) []CcLibraryRule {
 		// includeDirectories := getLibraryIncludePaths(gccFiltered)
 		includeDirectories := getAllIncludePaths(proj)
 
-		bazelTargetComment := fmt.Sprintf("# %s  %s:%s:%s, version:%s", comp.Description, comp.Class, comp.Group, comp.Subsection, comp.Version)
+		bazelTargetComment := fmt.Sprintf(`# %s - %s`, comp.Class, comp.Description)
 		bazelSourceFiles := append(mxFilesToBazelStringList(sourceFiles), mxFilesToBazelStringList(asmFiles)...)
 		bazelHeaderGlob := `glob(["**/*.h"])`
 
@@ -261,7 +264,15 @@ func combineComponents(project projectImpl) projectImpl {
 			ComponentNames[name] = comp
 		} else {
 			files := comp.Files
-			val.Files = append(val.Files, files...)
+			combinedFiles := append(val.Files, files...)
+			deDuplicatedFiles := make(map[string]MxFile)
+			for _, file := range combinedFiles {
+				deDuplicatedFiles[file.Name] = file
+			}
+			val.Files = []MxFile{}
+			for _, file := range deDuplicatedFiles {
+				val.Files = append(val.Files, file)
+			}
 			ComponentNames[name] = val
 		}
 	}
