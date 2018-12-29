@@ -80,10 +80,10 @@ func ProjectInit(gpdsc []byte) Project {
 	wg.Add(1)
 	go unmarshal(&project.conditions)
 	wg.Wait()
-	// Resolve target naming conflicts
-	project.components = project.components.resolveComponentConflict()
-	// Homogenise descriptions for each component
-	project.components.homogeniseDescriptions()
+
+	// Combine project files with the same name
+	project = combineComponents(project)
+
 	return project
 }
 
@@ -129,6 +129,7 @@ func getAllHeaders(proj Project) MxFiles {
 func getAllIncludePaths(proj Project) []string {
 	allHeaders := getAllHeaders(proj)
 	includePaths := getLibraryIncludePaths(allHeaders)
+	fmt.Println(includePaths)
 	return includePaths
 }
 
@@ -249,7 +250,7 @@ func (comp MxComponents) resolveComponentConflict() MxComponents {
 	return MxComponents{Components: result}
 }
 
-func combineComponents(project Project) Project {
+func combineComponents(project projectImpl) projectImpl {
 	components := project.Components()
 	ComponentNames := make(map[string]MxComponent)
 	for _, comp := range components {
@@ -268,6 +269,7 @@ func combineComponents(project Project) Project {
 	for _, val := range ComponentNames {
 		result = append(result, val)
 	}
+	project.components.Components = result
 	return project
 }
 
