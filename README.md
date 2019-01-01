@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/17759661/17759661/_apis/build/status/silvergasp.CubeMxToBazel?branchName=master)](https://dev.azure.com/17759661/17759661/_build/latest?definitionId=1?branchName=master)
+
 # CubeMxToBazel
 
 Converts STM32CUBEMX Projects to bazel projects. This is acheived by making use of the generated .gpdsc files from stm32cubemx and outputing these in a bazel build file.
