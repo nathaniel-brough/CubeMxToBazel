@@ -129,7 +129,6 @@ func getAllHeaders(proj Project) MxFiles {
 func getAllIncludePaths(proj Project) []string {
 	allHeaders := getAllHeaders(proj)
 	includePaths := getLibraryIncludePaths(allHeaders)
-	fmt.Println(includePaths)
 	return includePaths
 }
 
