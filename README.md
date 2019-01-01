@@ -12,7 +12,10 @@ This project is in the early developement stage with fairly minimal but well tes
 
 Requires a valid [golang](https://github.com/golang/go/wiki/Ubuntu) installation
 
-`go install github.com/silvergasp/CubeMxToBazel`
+```sh
+go get -u github.com/gobuffalo/packr/v2/packr2
+packr2 install github.com/silvergasp/CubeMxToBazel
+```
 
 ### Setting up stm32cubemx
 
