@@ -39,7 +39,6 @@ $GOPATH/bin/buildifier BUILD
 ## Current Functionality
 
 - [x] Converts generated `*.gpdsc` files from stm32cubemx into bazel BUILD files
-- [ ] Generates bazel WORKSPACE files
-- [ ] Generate appropriate bazel compiler flags for; fpu, cpu, hosting specs, optimisations
-- [ ] Implement conditional file inclusion (e.g. conditional inclusion of assembly files based on the compiler)
-- [ ] Implement diffing so that an update to the .gpdsc file can generate a .patch file for interactively updating the bazel build file
+- [x] Generates bazel WORKSPACE files
+- [ ] Generate appropriate bazel compiler flags for; fpu, cpu, hosting specs, optimisations (Currently supports armv7e devices with hardware fpu)
+- [x] Implement conditional file inclusion (e.g. conditional inclusion of assembly files based on the compiler)
