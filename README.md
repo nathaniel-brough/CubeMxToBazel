@@ -41,6 +41,17 @@ go install github.com/bazelbuild/buildtools/buildifier
 $GOPATH/bin/buildifier BUILD
 ```
 
+### Building using bazel
+
+Build all targets
+
+```sh
+cd YOUR_PROJECT_PATH_HERE
+bazel build ... --crosstool_top=@bazel_arm_none//tools/arm_compiler:toolchain --cpu=armeabi-v7a
+```
+
+The resulting binary executable and binary libraries can be found under `YOUR_PROJECT_PATH_HERE/bazel-bin`. The resulting executable will be named `YOUR_PROJECT_PATH_HERE/bazel-bin/main`.
+
 ## Current Functionality
 
 - [x] Converts generated `*.gpdsc` files from stm32cubemx into bazel BUILD files

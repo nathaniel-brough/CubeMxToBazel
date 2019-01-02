@@ -149,6 +149,7 @@ func MxProjectToCcLibraryRules(proj Project) []CcLibraryRule {
 		var files MxFiles = comp.Files
 		// TODO: Make this generic so that IAR compiler is supported
 		gccFiltered := append(files.Condition("GCC Toolchain").Files(), files.Condition("").Files()...)
+		gccExcludes := files.InvCondition("GCC Toolchain").Files()
 		sourceFiles := gccFiltered.SourceFiles().Files()
 		asmFiles := gccFiltered.AssemblyFiles().Files()
 		// includeDirectories := getLibraryIncludePaths(gccFiltered)
@@ -156,7 +157,7 @@ func MxProjectToCcLibraryRules(proj Project) []CcLibraryRule {
 
 		bazelTargetComment := fmt.Sprintf(`# %s - %s`, comp.Class, comp.Description)
 		bazelSourceFiles := append(mxFilesToBazelStringList(sourceFiles), mxFilesToBazelStringList(asmFiles)...)
-		bazelHeaderGlob := `glob(["**/*.h"])`
+		bazelHeaderGlob := fmt.Sprintf(`glob(["**/*.h"],exclude=%s)`, mxFilesToBazelStringList(gccExcludes).String())
 
 		// Generated attributes
 		name := bString(ccLibraryTargetName(comp))
