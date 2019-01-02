@@ -30,7 +30,7 @@ func TestMxProjectToCCLibrary(t *testing.T) {
 		Keys: attributeList{
 			attributeBString{Key: "name", Value: bString(ccLibraryTargetName(proj.Components()[0]))},
 			attributeBStringList{Key: attSrcs, Value: bStringList{"example.cc", "example.s"}},
-			attributeBVariable{Key: attHdrs, Value: `glob(["**/*.h"])`},
+			attributeBVariable{Key: attHdrs, Value: `glob(["**/*.h"],exclude=[])`},
 			attributeBStringList{Key: attIncludes, Value: bStringList([]string{"Drivers/STM32L4xx_HAL_Driver/Inc"})},
 			attributeBString{Key: attStripIncludePrefix, Value: "."},
 			attributeBBool{Key: attLinkStatic, Value: true},

@@ -52,6 +52,8 @@ bazel build ... --crosstool_top=@bazel_arm_none//tools/arm_compiler:toolchain --
 
 The resulting binary executable and binary libraries can be found under `YOUR_PROJECT_PATH_HERE/bazel-bin`. The resulting executable will be named `YOUR_PROJECT_PATH_HERE/bazel-bin/main`.
 
+**NOTE:** On first run this project will download the official arm compiler, as such it is expected that you have a strong internet connection. This downloaded compiler will be cached and does not require re-downloading provided that the arm_none_bazel rule in `WORKSPACE` is not modified.
+
 ## Current Functionality
 
 - [x] Converts generated `*.gpdsc` files from stm32cubemx into bazel BUILD files
