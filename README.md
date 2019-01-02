@@ -1,4 +1,4 @@
-[![Build Status](https://dev.azure.com/17759661/17759661/_apis/build/status/silvergasp.CubeMxToBazel?branchName=master)](https://dev.azure.com/17759661/17759661/_build/latest?definitionId=1?branchName=master)
+[![Build Status](https://dev.azure.com/17759661/CubeMxToBazel/_apis/build/status/silvergasp.CubeMxToBazel?branchName=master)](https://dev.azure.com/17759661/CubeMxToBazel/_build/latest?definitionId=1?branchName=master)
 
 # CubeMxToBazel
 
@@ -10,11 +10,21 @@ This project is in the early developement stage with fairly minimal but well tes
 
 ### Installation
 
+#### From Source
+
 Requires a valid [golang](https://github.com/golang/go/wiki/Ubuntu) installation
 
 ```sh
 go get -u github.com/gobuffalo/packr/v2/packr2
 packr2 install github.com/silvergasp/CubeMxToBazel
+```
+
+#### Binary Installation
+
+```sh
+wget https://github.com/silvergasp/CubeMxToBazel/releases/download/v1.0-beta.1/CubeMxToBazel-linux.tar.gz
+tar xvzf CubeMxToBazel-linux.tar.gz
+mv CubeMxToBazel ~/bin/
 ```
 
 ### Setting up stm32cubemx
