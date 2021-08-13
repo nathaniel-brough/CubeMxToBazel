@@ -16,6 +16,7 @@ Requires a valid [golang](https://github.com/golang/go/wiki/Ubuntu) installation
 
 ```sh
 go get -u github.com/gobuffalo/packr/v2/packr2
+go get -u github.com/silvergasp/CubeMxToBazel
 packr2 install github.com/silvergasp/CubeMxToBazel
 ```
 
