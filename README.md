@@ -40,6 +40,7 @@ Running the generator is as simple as changing directories into the project and 
 
 ```sh
 cd YOUR_PROJECT_PATH_HERE
+touch WORKSPACE
 $GOPATH/bin/CubeMxToBazel
 ```
 
